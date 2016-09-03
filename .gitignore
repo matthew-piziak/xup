@@ -1,1 +1,4 @@
 *~
+/.projectile
+/Cargo.lock
+target/
