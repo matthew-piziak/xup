@@ -1,0 +1,10 @@
+[package]
+name = "xup"
+version = "0.1.0"
+authors = ["Matthew Piziak <matthew.piziak@gmail.com>"]
+
+[dependencies]
+clap = "2"
+
+[dependencies.yaml-rust]
+git = "https://github.com/chyh1990/yaml-rust.git"
