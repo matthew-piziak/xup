@@ -39,7 +39,7 @@ type DoctrineName = String;
 
 fn load_doctrines(yaml_cfg_path: &Path) -> HashMap<DoctrineName, doctrine::Doctrine> {
     let yaml_cfg = load_yaml_cfg(&yaml_cfg_path);
-    let doctrines = doctrine::Doctrine::many_from_yaml(&yaml_cfg).expect("Something");
+    let doctrines = doctrine::Doctrine::many_from_yaml(yaml_cfg).expect("Something");
     doctrines.into_iter().map(|d| (d.name.clone(), d)).collect()
 }
 

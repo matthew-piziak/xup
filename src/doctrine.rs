@@ -2,40 +2,40 @@ extern crate yaml_rust;
 
 use self::yaml_rust::{yaml, Yaml};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Doctrine {
     pub name: String,
     pub categories: Vec<Category>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Category {
     pub ships: Vec<String>,
 }
 
 pub type Result<T> = ::std::result::Result<T, &'static str>; //' just fixing the CR pretty-printer
 
-fn load_name(doctrine: &yaml::Hash) -> Result<&str> {
+fn load_name(mut doctrine: &mut yaml::Hash) -> Result<String> {
     let name_key = Yaml::String("name".into());
-    doctrine.get(&name_key)
-            .ok_or("Doctrine name not a string.")
-            .and_then(|name| name.as_str().ok_or("Doctrine name not a string."))
+    doctrine.remove(&name_key)
+            .ok_or("Doctrine name not found.")
+            .and_then(|name| name.into_string().ok_or("Doctrine name not a string."))
 }
 
-fn load_categories(doctrine: &yaml::Hash) -> Result<Vec<Category>> {
+fn load_categories(mut doctrine: yaml::Hash) -> Result<Vec<Category>> {
     let categories_key = Yaml::String("categories".into());
-    doctrine.get(&categories_key)
+    doctrine.remove(&categories_key)
             .ok_or("Doctrine has no categories.")
             .and_then(Category::many_from_yaml)
 }
 
 impl Doctrine {
-    fn from_yaml(yaml: &Yaml) -> Result<Self> {
-        yaml.as_hash()
+    fn from_yaml(yaml: Yaml) -> Result<Self> {
+        yaml.into_hash()
             .ok_or("Expected doctrine.")
-            .and_then(|doctrine| {
-                let name = try!(load_name(&doctrine));
-                let categories = try!(load_categories(&doctrine));
+            .and_then(|mut doctrine| {
+                let name = try!(load_name(&mut doctrine));
+                let categories = try!(load_categories(doctrine));
 
                 Ok(Doctrine {
                     name: name.to_string(),
@@ -44,14 +44,14 @@ impl Doctrine {
             })
     }
 
-    pub fn many_from_yaml(doctrines: &Yaml) -> Result<Vec<Self>> {
-        doctrines.as_vec()
+    pub fn many_from_yaml(doctrines: Yaml) -> Result<Vec<Self>> {
+        doctrines.into_vec()
                  .ok_or("Expected list of doctrines.")
-                 .and_then(|doctrines| doctrines.iter().map(Doctrine::from_yaml).collect())
+                 .and_then(|doctrines| doctrines.into_iter().map(Doctrine::from_yaml).collect())
     }
 }
 
-fn load_ships(category_ships: &Yaml) -> Vec<String> {
+fn load_ships(category_ships: Yaml) -> Vec<String> {
     category_ships.as_vec()
                   .map(|ships| {
                       ships.iter()
@@ -64,27 +64,27 @@ fn load_ships(category_ships: &Yaml) -> Vec<String> {
                   .unwrap_or_else(Vec::new)
 }
 
-fn load_category(category: &yaml::Hash) -> Result<Category> {
+fn load_category(mut category: yaml::Hash) -> Result<Category> {
     let category_key = Yaml::String("category".into());
-    category.get(&category_key)
+    category.remove(&category_key)
             .ok_or("Could not find category.")
             .map(|category_ships| {
-                let ships = load_ships(&category_ships);
+                let ships = load_ships(category_ships);
                 Category { ships: ships }
             })
 }
 
 impl Category {
-    fn from_yaml(yaml: &Yaml) -> Result<Self> {
-        yaml.as_hash()
+    fn from_yaml(yaml: Yaml) -> Result<Self> {
+        yaml.into_hash()
             .ok_or("Expected category.")
             .and_then(load_category)
     }
 
-    fn many_from_yaml(categories: &Yaml) -> Result<Vec<Self>> {
-        categories.as_vec()
-                  .ok_or("Expected list of categories.")
-                  .and_then(|categories| categories.iter().map(Category::from_yaml).collect())
+    fn many_from_yaml(categories: Yaml) -> Result<Vec<Self>> {
+        categories.into_vec()
+            .ok_or("Expected list of categories.")
+            .and_then(|categories| categories.into_iter().map(Category::from_yaml).collect())
     }
 }
 
@@ -108,7 +108,7 @@ mod test {
     ]
 "#);
 
-        let res = Category::many_from_yaml(&yaml);
+        let res = Category::many_from_yaml(yaml);
         assert_eq!(res,
                    Ok(vec![
             Category { ships: vec!["Blackbird".into(), "Celestis".into(), "Maller".into()] },
@@ -126,7 +126,7 @@ mod test {
     [Blackbird]
 "#);
 
-        let res = Category::many_from_yaml(&yaml);
+        let res = Category::many_from_yaml(yaml);
         assert_eq!(res,
                    Ok(vec![
             Category { ships: vec![]},
@@ -148,7 +148,7 @@ mod test {
 "#);
 
 
-        let res = Doctrine::many_from_yaml(&yaml);
+        let res = Doctrine::many_from_yaml(yaml);
         assert_eq!(res,
                    Ok(vec![
             Doctrine { name: "Armor Battleships".into(),
@@ -176,7 +176,7 @@ mod test {
   - category: *ewar
 "#);
 
-        let res = Doctrine::many_from_yaml(&yaml);
+        let res = Doctrine::many_from_yaml(yaml);
         assert_eq!(res,
                    Ok(vec![
             Doctrine { name: "Armor Battleships".into(),
