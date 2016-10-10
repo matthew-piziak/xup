@@ -15,33 +15,29 @@ pub struct Category {
 
 pub type Result<T> = ::std::result::Result<T, &'static str>; //' just fixing the CR pretty-printer
 
-fn load_name(mut doctrine: &mut yaml::Hash) -> Result<String> {
+fn load_doctrine(mut doctrine: yaml::Hash) -> Result<Doctrine> {
     let name_key = Yaml::String("name".into());
-    doctrine.remove(&name_key)
-            .ok_or("Doctrine name not found.")
-            .and_then(|name| name.into_string().ok_or("Doctrine name not a string."))
-}
-
-fn load_categories(mut doctrine: yaml::Hash) -> Result<Vec<Category>> {
+    let name = try!(doctrine.remove(&name_key)
+                            .ok_or("Doctrine name not found.")
+                            .and_then(|name| {
+                                name.into_string()
+                                    .ok_or("Doctrine name not a string.")
+                            }));
     let categories_key = Yaml::String("categories".into());
-    doctrine.remove(&categories_key)
-            .ok_or("Doctrine has no categories.")
-            .and_then(Category::many_from_yaml)
+    let categories = try!(doctrine.remove(&categories_key)
+                                  .ok_or("Doctrine has no categories.")
+                                  .and_then(Category::many_from_yaml));
+    Ok(Doctrine {
+        name: name,
+        categories: categories,
+    })
 }
 
 impl Doctrine {
     fn from_yaml(yaml: Yaml) -> Result<Self> {
         yaml.into_hash()
             .ok_or("Expected doctrine.")
-            .and_then(|mut doctrine| {
-                let name = try!(load_name(&mut doctrine));
-                let categories = try!(load_categories(doctrine));
-
-                Ok(Doctrine {
-                    name: name.to_string(),
-                    categories: categories,
-                })
-            })
+            .and_then(|doctrine| load_doctrine(doctrine))
     }
 
     pub fn many_from_yaml(doctrines: Yaml) -> Result<Vec<Self>> {
@@ -83,8 +79,8 @@ impl Category {
 
     fn many_from_yaml(categories: Yaml) -> Result<Vec<Self>> {
         categories.into_vec()
-            .ok_or("Expected list of categories.")
-            .and_then(|categories| categories.into_iter().map(Category::from_yaml).collect())
+                  .ok_or("Expected list of categories.")
+                  .and_then(|categories| categories.into_iter().map(Category::from_yaml).collect())
     }
 }
 
