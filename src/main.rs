@@ -1,3 +1,5 @@
+//! Personal overkill x-up EVE utility
+
 extern crate clap;
 extern crate yaml_rust;
 
