@@ -37,7 +37,7 @@ impl Doctrine {
     fn from_yaml(yaml: Yaml) -> Result<Self> {
         yaml.into_hash()
             .ok_or("Expected doctrine.")
-            .and_then(|doctrine| load_doctrine(doctrine))
+            .and_then(load_doctrine)
     }
 
     pub fn many_from_yaml(doctrines: Yaml) -> Result<Vec<Self>> {

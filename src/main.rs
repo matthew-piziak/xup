@@ -20,7 +20,7 @@ fn file_contents(path: &Path) -> String {
 }
 
 fn load_yaml_cfg(yaml_cfg_path: &Path) -> Yaml {
-    let file_contents = file_contents(&yaml_cfg_path);
+    let file_contents = file_contents(yaml_cfg_path);
     let mut contents = YamlLoader::load_from_str(&file_contents).expect("Couldn't load");
 
     let num_documents = contents.len();
@@ -36,7 +36,7 @@ fn load_yaml_cfg(yaml_cfg_path: &Path) -> Yaml {
 type DoctrineName = String;
 
 fn load_doctrines(yaml_cfg_path: &Path) -> HashMap<DoctrineName, doctrine::Doctrine> {
-    let yaml_cfg = load_yaml_cfg(&yaml_cfg_path);
+    let yaml_cfg = load_yaml_cfg(yaml_cfg_path);
     let doctrines = doctrine::Doctrine::many_from_yaml(yaml_cfg).expect("Something");
     doctrines.into_iter().map(|d| (d.name.clone(), d)).collect()
 }
